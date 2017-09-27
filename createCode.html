@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>生成</title>
+    <link rel="stylesheet" type="text/css" href="https://static-10014880.file.myqcloud.com/v1.1/static/css/oem_v1/loadingstyle.css">
+    <script>
+        var designWidth = 750;
+        resize();
+        window.addEventListener("resize",function(){
+            resize();
+        })
+        function resize(){
+            var clientWidth = document.documentElement.clientWidth;
+            var fontSize = clientWidth / designWidth * 100;
+            document.documentElement.style.fontSize = fontSize+"px";
+        }
+    </script>
+    <style>
+        *{margin: 0;padding: 0}
+        .box{width: 100%;height: 100%;overflow: hidden}
+        #createBtn{width: 3rem;height: 0.6rem;font-size: 0.32rem;border-radius: 0.3rem;text-align: center; border: 0px; background: red;display: block;color: #ffffff;outline: none;position: absolute;bottom: 0.5rem;left: 50%;margin-left: -1.5rem}
+        .title{width: 80%;height: 0.6rem;margin: 0 auto;margin-bottom: 0;border: 1px solid #000000;}
+        .title div{float:left;font-size: 0.4rem;width: 50%;text-align: center;height: 0.6rem;line-height: 0.6rem}
+        .title div:nth-child(1){width: 49%;border-right: 1px solid #000000;}
+        .codeList{width: 80%;height: 8.6rem;overflow: hidden;margin: 0 auto;overflow-y: scroll;display: block;border: 1px solid #000000;border-top: 0}
+        .codeList li{font-size: 0.28rem;width: 100%;height: 0.6rem;border-bottom: 1px solid #000000;list-style: none;}
+        .codeList li div{height: 0.6rem;line-height: 0.6rem;text-align: center}
+        .codeList li div:nth-child(1){width: 49%;float: left;border-right: 1px solid #000000;}
+        .codeState{width: 50%;float: left}
+        .loading-toast{width: 100%;height: 100%;  top:0;}
+        .weui_loading{ top:50%;}
+        .nextBtn,.prevBtn{width: 80%;margin: 0 auto;text-align: right;height: 0.6rem;  overflow: hidden;font-size: 0.32rem;line-height: 0.6rem}
+        #next_page,#prev_page{line-height: 0.4rem}
+        .prevBtn{margin-top: 0.5rem}
+        #prev_page{display: none;}
+    </style>
+</head>
+<body>
+    <div class="box">
+        <button id="createBtn">点击生成激活码</button>
+        <div class="prevBtn">
+            <a id="prev_page">上一页</a>
+        </div>
+        <div class="title">
+            <div>激活码</div>
+            <div>状态</div>
+        </div>
+        <ul class="codeList">
+
+        </ul>
+        <div class="nextBtn">
+            <a id="next_page">下一页</a>
+        </div>
+
+    </div>
+    <!-- loading toast -->
+    <div id="loadingToast" class="weui_loading_toast" style="display:none;z-index:120;">
+        <div class="toast_mask" style="z-index:121;"></div>
+        <div class="loading-toast" style="z-index:122;">
+            <div class="weui_loading"><div class="loading_leaf loading_leaf_0"></div><div class="loading_leaf loading_leaf_1"></div><div class="loading_leaf loading_leaf_2"></div><div class="loading_leaf loading_leaf_3"></div><div class="loading_leaf loading_leaf_4"></div><div class="loading_leaf loading_leaf_5"></div><div class="loading_leaf loading_leaf_6"></div><div class="loading_leaf loading_leaf_7"></div><div class="loading_leaf loading_leaf_8"></div><div class="loading_leaf loading_leaf_9"></div><div class="loading_leaf loading_leaf_10"></div><div class="loading_leaf loading_leaf_11"></div></div>
+            <p id="weuiToastCon" class="weui_toast_content">数据加载中</p>
+        </div>
+    </div>
+</body>
+<script src="http://images-10014880.cossh.myqcloud.com/js/code/zepto.min.js"></script>
+<script>
+    //进页面加载50个数据
+    var code_len=0,n=1;
+
+    $("#loadingToast").show();
+    //获得数据
+    $.ajax({
+        type:"get",
+        url:"http://182.254.242.148:8080/api/jihuoma/?start=0&end=50",
+        dataType:"json",
+
+        success:function (data) {
+            var str = '';
+            var codes = [];
+            code_len=data.jihuoma_list.length;
+            console.log(code_len);
+            //验证激活码状态
+            for(var i=0,len=data.jihuoma_list.length;i<len;i++){
+                $.ajax({
+                    url:'http://182.254.242.148:8080/api/jihuoma/code_used/',
+                    type:'GET',
+                    dataType:'json',
+                    async:false,
+                    data:{code:data.jihuoma_list[i]},
+                    success:function (res) {
+                        var used=res.is_used?'已使用':'未使用';
+                        str += "<li><div class='code'>"+data.jihuoma_list[i]+"</div><div class='codeState'>"+used+"</div></li>";
+                    }
+                })
+            }
+            console.log(codes);
+            $('.codeList').html(str);
+            $("#loadingToast").hide();
+        }
+    })
+
+    //点击下一页
+    $('#next_page').click(function () {
+        $("#loadingToast").show();
+        if(code_len>49){
+            $.ajax({
+                type:"get",
+                url:"http://182.254.242.148:8080/api/jihuoma/",
+                dataType:'json',
+                data:{start:50*n,end:50+50*n},
+                success:function (data) {
+                    var str = '';
+                    console.log(data.jihuoma_list.length);
+                    for(var i=0,len=data.jihuoma_list.length;i<len;i++){
+                        $.ajax({
+                            url:'http://182.254.242.148:8080/api/jihuoma/code_used/',
+                            type:'GET',
+                            dataType:'json',
+                            async:false,
+                            data:{code:data.jihuoma_list[i]},
+                            success:function (res) {
+                                var used=res.is_used?'已使用':'未使用';
+                                str += "<li><div class='code'>"+data.jihuoma_list[i]+"</div><div class='codeState'>"+used+"</div></li>";
+                            }
+                        })
+                    }
+                    n += 1;
+                    console.log(n);
+                    if(n > 1){
+                        $('#prev_page').show();
+                    }else {
+                        $('#prev_page').hide();
+                    }
+                    $('.codeList').html('');
+                    $('.codeList').html(str);
+                    $("#loadingToast").hide();
+                }
+            })
+        }
+    })
+
+    //点击上一页
+    $('#prev_page').click(function () {
+        if(code_len>49){
+            n -= 1;
+            console.log(n);
+            if(n > 1){
+                $('#prev_page').show();
+            }else {
+                $('#prev_page').hide();
+            }
+            $("#loadingToast").show();
+            $.ajax({
+                type:"get",
+                url:"http://182.254.242.148:8080/api/jihuoma/",
+                dataType:'json',
+                data:{start:50*n-50,end:50*n},
+                success:function (data) {
+                    var str = '';
+                    for(var i=0,len=data.jihuoma_list.length;i<len;i++){
+                        $.ajax({
+                            url:'http://182.254.242.148:8080/api/jihuoma/code_used/',
+                            type:'GET',
+                            dataType:'json',
+                            async:false,
+                            data:{code:data.jihuoma_list[i]},
+                            success:function (res) {
+                                var used=res.is_used?'已使用':'未使用';
+                                str += "<li><div class='code'>"+data.jihuoma_list[i]+"</div><div class='codeState'>"+used+"</div></li>";
+                            }
+                        })
+                    }
+
+                    $('.codeList').html('');
+                    $('.codeList').html(str);
+                    $("#loadingToast").hide();
+                }
+            })
+        }
+    })
+
+    //点击生成按钮
+    $('#createBtn').click(function () {
+        $("#loadingToast").show();
+        var createStr = '';
+        $.ajax({
+            type:"post",
+            url:"http://182.254.242.148:8080/api/jihuoma/",
+            dataType:'json',
+            async:true,
+
+            success:function (data) {
+                for(i = 0;i < data.jihuoma_list.length;i++){
+                    $.ajax({
+                        type:"get",
+                        url:"http://182.254.242.148:8080/api/jihuoma/code_used/",
+                        dataType:'json',
+                        async:false,
+                        data:{code:data.jihuoma_list[i]},
+
+                        success:function (res) {
+                            var used=res.is_used?'已使用':'未使用';
+                            createStr += "<li><div class='code'>"+data.jihuoma_list[i]+"</div><div class='codeState'>"+used+"</div></li>";
+                        }
+                    })
+                }
+                $('.codeList').html('');
+                $('.codeList').html(createStr);
+                $("#loadingToast").hide();
+            }
+        })
+    })
+</script>
+</html>
